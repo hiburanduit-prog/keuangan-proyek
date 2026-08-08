@@ -234,7 +234,9 @@
     .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
     .filter-bar .form-input, .filter-bar .form-select { font-size: 13px; padding: 8px 12px; }
     .filter-item { display: flex; flex-direction: column; gap: 4px; }
-    .filter-label { font-size: 11.5px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }    /* EMPTY STATE */
+    .filter-label { font-size: 11.5px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+
+    /* EMPTY STATE */
     .empty-state { text-align: center; padding: 48px 20px; color: var(--text-muted); }
     .empty-state-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.4; }
     .empty-state h3 { font-size: 16px; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
@@ -243,7 +245,7 @@
     /* UPLOAD */
     .upload-area { border: 2px dashed var(--border); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; transition: var(--transition); color: var(--text-muted); font-size: 13px; }
     .upload-area:hover { border-color: var(--accent); color: var(--accent-light); background: var(--accent-glow); }
-    .upload-preview { max-width: 100%; max-height: 150px; border-radius: var(--radius-sm); object-fit: contain; margin-top: 10px; }
+    .upload-preview { max-width: 100%; max-height: 150px; border-radius: var(--radius-sm); margin-top: 10px; object-fit: contain; }
 
     /* CONFIRM */
     .confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; visibility: hidden; transition: var(--transition); }
@@ -395,8 +397,7 @@
       </div>
       <div class="card">
         <div class="card-title">Tren Pemasukan vs Pengeluaran</div>
-        <div class="chart-tabs">
-          <button class="chart-tab active" id="tab-weekly" onclick="switchTrend('weekly')">Mingguan</button>
+        <div class="chart-tabs">          <button class="chart-tab active" id="tab-weekly" onclick="switchTrend('weekly')">Mingguan</button>
           <button class="chart-tab" id="tab-monthly" onclick="switchTrend('monthly')">Bulanan</button>
         </div>
         <div style="height:200px;">
@@ -490,27 +491,7 @@
     </div>
     <div class="card" style="margin-top:20px;">
       <div class="flex items-center justify-between mb-16">
-        <div class="card-title" style="margin:0;"> Riwayat Perubahan (Audit Log)</div>
-        <button class="btn btn-ghost btn-sm" onclick="clearAuditLog()">Bersihkan</button>
-      </div>
-      <div id="audit-list" style="max-height:280px;overflow-y:auto;"></div>
-    </div>
-  </div>      <div class="table-wrapper">
-        <table>
-          <thead><tr><th>Tanggal</th><th>Proyek</th><th>Jenis</th><th>Kategori</th><th>Keterangan</th><th>Bukti</th><th class="text-right">Jumlah</th><th>Aksi</th></tr></thead>
-          <tbody id="tx-tbody"></tbody>
-        </table>
-        <div id="tx-empty" class="empty-state hidden">
-          <div class="empty-state-icon">💸</div>
-          <h3>Belum ada transaksi</h3>
-          <p>Klik "Tambah Transaksi" untuk mulai mencatat</p>
-        </div>
-      </div>
-      <div id="tx-count" class="text-sm text-muted" style="margin-top:12px;text-align:right;"></div>
-    </div>
-    <div class="card" style="margin-top:20px;">
-      <div class="flex items-center justify-between mb-16">
-        <div class="card-title" style="margin:0;"> Riwayat Perubahan (Audit Log)</div>
+        <div class="card-title" style="margin:0;">📋 Riwayat Perubahan (Audit Log)</div>
         <button class="btn btn-ghost btn-sm" onclick="clearAuditLog()">Bersihkan</button>
       </div>
       <div id="audit-list" style="max-height:280px;overflow-y:auto;"></div>
@@ -675,7 +656,9 @@
       </div>
     </div>
   </div>
-</div><!-- TRANSACTION MODAL -->
+</div>
+
+<!-- TRANSACTION MODAL -->
 <div class="modal-overlay" id="modal-transaction">
   <div class="modal">
     <div class="modal-header">
@@ -889,7 +872,7 @@ function seedIfEmpty() {
     { id: uid(), projectId: pA, date: '2024-03-01', type: 'Keluar', categoryId: cTrans, amount: 2800000,   description: 'Ongkos kirim material',     receipt: '' },
     { id: uid(), projectId: pA, date: '2024-03-10', type: 'Keluar', categoryId: cTK,    amount: 9500000,   description: 'Upah tukang minggu 3-6',    receipt: '' },
     { id: uid(), projectId: pB, date: '2024-03-05', type: 'Masuk',  categoryId: cPay,   amount: 120000000, description: 'DP Pembangunan Gudang',     receipt: '' },
-    { id: uid(), projectId: pB, date: '2024-03-15', type: 'Keluar', categoryId: cMat,   amount: 45000000,  description: 'Besi, semen, pasir',        receipt: '' },
+    { id: uid(), projectId: pB, date: '2024-03-15', type: 'Keluar', categoryId: cMat,   amount: 45000000,  description: 'Besi, cement, pasir',        receipt: '' },
     { id: uid(), projectId: pB, date: '2024-03-20', type: 'Keluar', categoryId: cTK,    amount: 15000000,  description: 'Upah pekerja konstruksi',   receipt: '' },
     { id: uid(), projectId: pB, date: '2024-04-01', type: 'Keluar', categoryId: cSewa,  amount: 8500000,   description: 'Sewa alat berat 2 minggu',  receipt: '' },
     { id: uid(), projectId: pB, date: '2024-04-10', type: 'Masuk',  categoryId: cPay,   amount: 80000000,  description: 'Pembayaran termin 2',       receipt: '' },
@@ -936,7 +919,7 @@ function renderDashboard() {
 function renderProjectPills(db) {
   const c = document.getElementById('project-pills');
   if (!db.projects.length) { c.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">Belum ada proyek. Tambah di tab Pengaturan.</span>'; return; }
-  c.innerHTML = db.projects.map(p => \`<button class="project-pill \${p.id === activeProjectId ? 'active' : ''}" onclick="setActiveProject('\\\${p.id}')"><span class="status-dot \${p.status.toLowerCase()}"></span>\${p.name}</button>\`).join('');
+  c.innerHTML = db.projects.map(p => `<button class="project-pill ${p.id === activeProjectId ? 'active' : ''}" onclick="setActiveProject('${p.id}')"><span class="status-dot ${p.status.toLowerCase()}"></span>${p.name}</button>`).join('');
 }
 
 function setActiveProject(id) { activeProjectId = id; renderDashboard(); }
@@ -1013,7 +996,8 @@ function renderBarChart() {
   const labels = keys.map(k => trendPeriod === 'monthly' ? formatMonthLabel(k) : k);
   if (barChart) barChart.destroy();
   barChart = new Chart(document.getElementById('chart-bar'), {
-    type: 'bar',    data: { labels: labels.length ? labels : ['—'], datasets: [
+    type: 'bar',
+    data: { labels: labels.length ? labels : ['—'], datasets: [
       { label: 'Pemasukan', data: keys.map(k => buckets[k].masuk), backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 6, borderSkipped: false },
       { label: 'Pengeluaran', data: keys.map(k => buckets[k].keluar), backgroundColor: 'rgba(239,68,68,0.75)', borderRadius: 6, borderSkipped: false }
     ]},
@@ -1026,16 +1010,16 @@ function renderRecentTable(db) {
   const tbody = document.getElementById('recent-tbody'), empty = document.getElementById('recent-empty');
   if (!txs.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
-  tbody.innerHTML = txs.map(t => { const cat = db.categories.find(c => c.id === t.categoryId); return \`<tr><td>\${formatDate(t.date)}</td><td><span class="badge \${t.type === 'Masuk' ? 'masuk' : 'keluar'}">\${t.type === 'Masuk' ? '📈 Masuk' : '📉 Keluar'}</span></td><td><span class="badge kategori">\${cat ? cat.name : '-'}</span></td><td class="td-muted">\${t.description || '-'}</td><td class="text-right font-bold \${t.type === 'Masuk' ? 'text-success' : 'text-danger'}">\${t.type === 'Masuk' ? '+' : '-'} \${formatRp(t.amount)}</td></tr>\`; }).join('');
+  tbody.innerHTML = txs.map(t => { const cat = db.categories.find(c => c.id === t.categoryId); return `<tr><td>${formatDate(t.date)}</td><td><span class="badge ${t.type === 'Masuk' ? 'masuk' : 'keluar'}">${t.type === 'Masuk' ? '📈 Masuk' : '📉 Keluar'}</span></td><td><span class="badge kategori">${cat ? cat.name : '-'}</span></td><td class="td-muted">${t.description || '-'}</td><td class="text-right font-bold ${t.type === 'Masuk' ? 'text-success' : 'text-danger'}">${t.type === 'Masuk' ? '+' : '-'}${formatRp(t.amount)}</td></tr>`; }).join('');
 }
 
 function renderAllProjectsSummary(db) {
   let tM = 0, tK = 0, tA = 0;
   db.projects.forEach(p => { const s = getProjectStats(db, p.id); tM += s.masuk; tK += s.keluar; tA += p.budget; });
-  document.getElementById('all-projects-stats').innerHTML = \`
-    <div class="all-stat"><div class="all-stat-label">\${db.projects.length} Proyek · Total Pemasukan</div><div class="all-stat-value text-success">\${formatRp(tM)}</div></div>
-    <div class="all-stat"><div class="all-stat-label">Total Pengeluaran</div><div class="all-stat-value text-danger">\${formatRp(tK)}</div></div>
-    <div class="all-stat"><div class="all-stat-label">Total Anggaran Dikelola</div><div class="all-stat-value" style="color:var(--accent-light)">\${formatRp(tA)}</div></div>\`;
+  document.getElementById('all-projects-stats').innerHTML = `
+    <div class="all-stat"><div class="all-stat-label">${db.projects.length} Proyek · Total Pemasukan</div><div class="all-stat-value text-success">${formatRp(tM)}</div></div>
+    <div class="all-stat"><div class="all-stat-label">Total Pengeluaran</div><div class="all-stat-value text-danger">${formatRp(tK)}</div></div>
+    <div class="all-stat"><div class="all-stat-label">Total Anggaran Dikelola</div><div class="all-stat-value" style="color:var(--accent-light)">${formatRp(tA)}</div></div>`;
 }
 
 // ===== TRANSACTIONS =====
@@ -1044,7 +1028,7 @@ function openTransactionModal(editId) {
   document.getElementById('tx-modal-title').textContent = isEdit ? 'Edit Transaksi' : 'Tambah Transaksi';
   document.getElementById('tx-edit-id').value = editId || '';
   const sel = document.getElementById('tx-project');
-  sel.innerHTML = '<option value="">— Pilih Proyek —</option>' + db.projects.map(p => \`<option value="\${p.id}">\${p.name}</option>\`).join('');
+  sel.innerHTML = '<option value="">— Pilih Proyek —</option>' + db.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   document.getElementById('tx-date').value = today();
   if (isEdit) {
     const tx = db.transactions.find(t => t.id === editId);
@@ -1076,7 +1060,7 @@ function setType(type) {
 function populateCategorySelect(type, selectedId) {
   const db = getDB();
   const cats = db.categories.filter(c => c.type === type || c.type === 'Keduanya');
-  document.getElementById('tx-category').innerHTML = '<option value="">— Pilih Kategori —</option>' + cats.map(c => \`<option value="\${c.id}" \${c.id === selectedId ? 'selected' : ''}>\${c.name}</option>\`).join('');
+  document.getElementById('tx-category').innerHTML = '<option value="">— Pilih Kategori —</option>' + cats.map(c => `<option value="${c.id}" ${c.id === selectedId ? 'selected' : ''}>${c.name}</option>`).join('');
 }
 
 function handleReceiptUpload(input) {
@@ -1158,15 +1142,15 @@ function renderTransactionTable() {
   empty.classList.add('hidden'); count.textContent = 'Menampilkan ' + txs.length + ' transaksi';
   tbody.innerHTML = txs.map(t => {
     const cat = db.categories.find(c => c.id === t.categoryId), proj = db.projects.find(p => p.id === t.projectId);
-    return \`<tr><td>\${formatDate(t.date)}</td><td class="td-muted">\${proj?.name || '-'}</td><td><span class="badge \${t.type === 'Masuk' ? 'masuk' : 'keluar'}">\${t.type === 'Masuk' ? '📈 Masuk' : '📉 Keluar'}</span></td><td><span class="badge kategori">\${cat?.name || '-'}</span></td><td class="td-muted">\${t.description || '-'}</td><td>\${t.receipt ? '<img src="' + t.receipt + '" class="receipt-thumb" onclick="openLightbox(this.src)" />' : '<span class="text-muted">-</span>'}</td><td class="text-right font-bold \${t.type === 'Masuk' ? 'text-success' : 'text-danger'}">\${t.type === 'Masuk' ? '+' : '-'} \${formatRp(t.amount)}</td><td><div class="flex gap-8"><button class="btn btn-ghost btn-sm btn-icon" onclick="openTransactionModal('\\\${t.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteTransaction('\\\${t.id}')">🗑️</button></div></td></tr>\`;
+    return `<tr><td>${formatDate(t.date)}</td><td class="td-muted">${proj?.name || '-'}</td><td><span class="badge ${t.type === 'Masuk' ? 'masuk' : 'keluar'}">${t.type === 'Masuk' ? '📈 Masuk' : '📉 Keluar'}</span></td><td><span class="badge kategori">${cat?.name || '-'}</span></td><td class="td-muted">${t.description || '-'}</td><td>${t.receipt ? '<img src="' + t.receipt + '" class="receipt-thumb" onclick="openLightbox(this.src)" />' : '<span class="text-muted">-</span>'}</td><td class="text-right font-bold ${t.type === 'Masuk' ? 'text-success' : 'text-danger'}">${t.type === 'Masuk' ? '+' : '-'}${formatRp(t.amount)}</td><td><div class="flex gap-8"><button class="btn btn-ghost btn-sm btn-icon" onclick="openTransactionModal('${t.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteTransaction('${t.id}')">🗑️</button></div></td></tr>`;
   }).join('');
 }
 
 function populateTxFilterDropdowns() {
   const db = getDB();
   const pp = document.getElementById('tx-filter-project'), cp = document.getElementById('tx-filter-cat');
-  if (pp) pp.innerHTML = '<option value="">Semua Proyek</option>' + db.projects.map(p => \`<option value="\${p.id}">\${p.name}</option>\`).join('');
-  if (cp) cp.innerHTML = '<option value="">Semua</option>' + db.categories.map(c => \`<option value="\${c.id}">\${c.name}</option>\`).join('');
+  if (pp) pp.innerHTML = '<option value="">Semua Proyek</option>' + db.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  if (cp) cp.innerHTML = '<option value="">Semua</option>' + db.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 }
 
 function clearTxFilters() {
@@ -1181,7 +1165,7 @@ function renderAuditLog() {
   const db = getDB(), list = document.getElementById('audit-list'), logs = (db.auditLog || []).slice(0, 50);
   if (!logs.length) { list.innerHTML = '<div class="empty-state" style="padding:24px"><div class="empty-state-icon" style="font-size:32px">📋</div><p>Belum ada riwayat</p></div>'; return; }
   const cls = { CREATE_TRANSACTION: 'create', UPDATE_TRANSACTION: 'update', DELETE_TRANSACTION: 'delete', CREATE_PROJECT: 'create', DELETE_PROJECT: 'delete', UPDATE_PROJECT: 'update', INIT: 'create' };
-  list.innerHTML = logs.map(l => \`<div class="audit-item \${cls[l.action] || 'create'}"><div>\${l.desc}</div><div class="audit-time">🕐 \${new Date(l.timestamp).toLocaleString('id-ID')}</div></div>\`).join('');
+  list.innerHTML = logs.map(l => `<div class="audit-item ${cls[l.action] || 'create'}"><div>${l.desc}</div><div class="audit-time">🕐 ${new Date(l.timestamp).toLocaleString('id-ID')}</div></div>`).join('');
 }
 function clearAuditLog() { const db = getDB(); db.auditLog = []; saveDB(db); renderAuditLog(); toast('Riwayat dibersihkan', 'info'); }
 
@@ -1212,7 +1196,8 @@ function saveProject() {
   if (!endDate) { showError('proj-end', 'err-proj-end'); valid = false; }
   if (!valid) return;
   if (editId) {
-    const idx = db.projects.findIndex(p => p.id === editId);    db.projects[idx] = { ...db.projects[idx], name, budget, startDate, endDate, status };
+    const idx = db.projects.findIndex(p => p.id === editId);
+    db.projects[idx] = { ...db.projects[idx], name, budget, startDate, endDate, status };
     addAudit(db, 'UPDATE_PROJECT', 'Edit proyek: ' + name);
     toast('Proyek berhasil diperbarui');
   } else {
@@ -1238,7 +1223,7 @@ function renderProjectTable() {
   const db = getDB(), tbody = document.getElementById('project-tbody'), empty = document.getElementById('project-empty');
   if (!db.projects.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
-  tbody.innerHTML = db.projects.map(p => \`<tr><td><strong>\${p.name}</strong></td><td class="text-right">\${formatRp(p.budget)}</td><td>\${formatDate(p.startDate)}</td><td>\${formatDate(p.endDate)}</td><td><span class="badge \${p.status.toLowerCase()}">\${p.status}</span></td><td><div class="flex gap-8"><button class="btn btn-ghost btn-sm btn-icon" onclick="openProjectModal('\${p.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteProject('\${p.id}')">🗑️</button></div></td></tr>\`).join('');
+  tbody.innerHTML = db.projects.map(p => `<tr><td><strong>${p.name}</strong></td><td class="text-right">${formatRp(p.budget)}</td><td>${formatDate(p.startDate)}</td><td>${formatDate(p.endDate)}</td><td><span class="badge ${p.status.toLowerCase()}">${p.status}</span></td><td><div class="flex gap-8"><button class="btn btn-ghost btn-sm btn-icon" onclick="openProjectModal('${p.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteProject('${p.id}')">🗑️</button></div></td></tr>`).join('');
 }
 
 // ===== CATEGORIES =====
@@ -1260,7 +1245,6 @@ function saveCategory() {
   saveDB(db); closeModal('modal-category'); renderCategoryTable();
 }
 
-// ===== EXPORT PDF =====
 function deleteCategory(id) {
   showConfirm('🏷️', 'Hapus Kategori', 'Kategori ini akan dihapus. Lanjutkan?', () => {
     const db = getDB(); db.categories = db.categories.filter(c => c.id !== id); saveDB(db); renderCategoryTable(); toast('Kategori dihapus', 'info');
@@ -1273,7 +1257,7 @@ function renderCategoryTable() {
   empty.classList.add('hidden');
   tbody.innerHTML = db.categories.map(c => {
     const badgeClass = c.type === 'Masuk' ? 'masuk' : c.type === 'Keluar' ? 'keluar' : 'keduanya';
-    return \`<tr><td><strong>\${c.name}</strong></td><td><span class="badge \${badgeClass}">\${c.type}</span></td><td><div class="flex gap-8"><button class="btn btn-ghost btn-sm btn-icon" onclick="openCategoryModal('\${c.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteCategory('\${c.id}')">🗑️</button></div></td></tr>\`;
+    return `<tr><td><strong>${c.name}</strong></td><td><span class="badge ${badgeClass}">${c.type}</span></td><td><div class="flex gap-8"><button class="btn btn-ghost btn-sm btn-icon" onclick="openCategoryModal('${c.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteCategory('${c.id}')">🗑️</button></div></td></tr>`;
   }).join('');
 }
 
@@ -1281,8 +1265,8 @@ function renderCategoryTable() {
 function populateRptDropdowns() {
   const db = getDB();
   const rp = document.getElementById('rpt-project'), rc = document.getElementById('rpt-cat');
-  if (rp) rp.innerHTML = '<option value="">Semua Proyek</option>' + db.projects.map(p => \`<option value="\${p.id}">\${p.name}</option>\`).join('');
-  if (rc) rc.innerHTML = '<option value="">Semua</option>' + db.categories.map(c => \`<option value="\${c.id}">\${c.name}</option>\`).join('');
+  if (rp) rp.innerHTML = '<option value="">Semua Proyek</option>' + db.projects.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  if (rc) rc.innerHTML = '<option value="">Semua</option>' + db.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 }
 
 function getFilteredTxs() {
@@ -1304,17 +1288,17 @@ function renderReport() {
   const totalMasuk = txs.filter(t => t.type === 'Masuk').reduce((s,t) => s+t.amount, 0);
   const totalKeluar = txs.filter(t => t.type === 'Keluar').reduce((s,t) => s+t.amount, 0);
   const saldo = totalMasuk - totalKeluar;
-  document.getElementById('rpt-summary-cards').innerHTML = \`
-    <div class="stat-card green" style="padding:16px;"><div class="stat-label">Total Pemasukan</div><div class="stat-value green">\${formatRp(totalMasuk)}</div><div class="stat-sub">\${txs.filter(t=>t.type==='Masuk').length} transaksi</div></div>
-    <div class="stat-card red" style="padding:16px;"><div class="stat-label">Total Pengeluaran</div><div class="stat-value red">\${formatRp(totalKeluar)}</div><div class="stat-sub">\${txs.filter(t=>t.type==='Keluar').length} transaksi</div></div>
-    <div class="stat-card \${saldo>=0?'blue':'red'}" style="padding:16px;"><div class="stat-label">Saldo Akhir</div><div class="stat-value \${saldo>=0?'blue':'red'}">\${formatRp(saldo)}</div><div class="stat-sub">\${saldo>=0?'✅ Surplus':'⚠️ Defisit'}</div></div>\`;
+  document.getElementById('rpt-summary-cards').innerHTML = `
+    <div class="stat-card green" style="padding:16px;"><div class="stat-label">Total Pemasukan</div><div class="stat-value green">${formatRp(totalMasuk)}</div><div class="stat-sub">${txs.filter(t=>t.type==='Masuk').length} transaksi</div></div>
+    <div class="stat-card red" style="padding:16px;"><div class="stat-label">Total Pengeluaran</div><div class="stat-value red">${formatRp(totalKeluar)}</div><div class="stat-sub">${txs.filter(t=>t.type==='Keluar').length} transaksi</div></div>
+    <div class="stat-card ${saldo>=0?'blue':'red'}" style="padding:16px;"><div class="stat-label">Saldo Akhir</div><div class="stat-value ${saldo>=0?'blue':'red'}">${formatRp(saldo)}</div><div class="stat-sub">${saldo>=0?'✅ Surplus':'⚠️ Defisit'}</div></div>`;
   // Breakdown per category
   const catMap = {};
   txs.forEach(t => { const cat = db.categories.find(c => c.id === t.categoryId); const key = t.categoryId || 'other'; if (!catMap[key]) catMap[key] = { name: cat?.name || 'Lain-lain', type: t.type, total: 0 }; catMap[key].total += t.amount; });
   const grandTotal = txs.reduce((s,t) => s+t.amount, 0);
   const catRows = Object.values(catMap).sort((a,b) => b.total - a.total);
   document.getElementById('rpt-cat-tbody').innerHTML = catRows.length
-    ? catRows.map(r => \`<tr><td><strong>\${r.name}</strong></td><td><span class="badge \${r.type === 'Masuk' ? 'masuk' : 'keluar'}">\${r.type}</span></td><td class="text-right">\${formatRp(r.total)}</td><td class="text-right text-muted">\${grandTotal ? Math.round(r.total/grandTotal*100) : 0}%</td></tr>\`).join('')
+    ? catRows.map(r => `<tr><td><strong>${r.name}</strong></td><td><span class="badge ${r.type === 'Masuk' ? 'masuk' : 'keluar'}">${r.type}</span></td><td class="text-right">${formatRp(r.total)}</td><td class="text-right text-muted">${grandTotal ? Math.round(r.total/grandTotal*100) : 0}%</td></tr>`).join('')
     : '<tr><td colspan="4" class="td-muted" style="text-align:center;padding:20px;">Tidak ada data</td></tr>';
   // Breakdown per period
   const periodMap = {};
@@ -1328,7 +1312,7 @@ function renderReport() {
   });
   const periodRows = Object.entries(periodMap).sort((a,b) => b[0].localeCompare(a[0]));
   document.getElementById('rpt-period-tbody').innerHTML = periodRows.length
-    ? periodRows.map(([k,v]) => \`<tr><td>\${period === 'monthly' ? formatMonthLabel(k) : k}</td><td class="text-right text-success">\${formatRp(v.masuk)}</td><td class="text-right text-danger">\${formatRp(v.keluar)}</td><td class="text-right font-bold \${v.masuk-v.keluar>=0?'text-success':'text-danger'}">\${formatRp(v.masuk-v.keluar)}</td></tr>\`).join('')
+    ? periodRows.map(([k,v]) => `<tr><td>${period === 'monthly' ? formatMonthLabel(k) : k}</td><td class="text-right text-success">${formatRp(v.masuk)}</td><td class="text-right text-danger">${formatRp(v.keluar)}</td><td class="text-right font-bold ${v.masuk-v.keluar>=0?'text-success':'text-danger'}">${formatRp(v.masuk-v.keluar)}</td></tr>`).join('')
     : '<tr><td colspan="4" class="td-muted" style="text-align:center;padding:20px;">Tidak ada data</td></tr>';
   // Budget vs Realisasi
   document.getElementById('rpt-budget-tbody').innerHTML = db.projects.length
@@ -1337,7 +1321,7 @@ function renderReport() {
         const pct = p.budget>0 ? Math.round(keluar/p.budget*100) : 0;
         const status = pct>=100 ? 'overbudget' : pct>=80 ? 'mendekati' : 'aman';
         const label = pct>=100 ? '🚨 Over Budget' : pct>=80 ? '⚠️ Mendekati' : '✅ Aman';
-        return \`<tr><td><strong>\${p.name}</strong></td><td class="text-right">\${formatRp(p.budget)}</td><td class="text-right text-danger">\${formatRp(keluar)}</td><td class="text-right \${p.budget-keluar>=0?'text-success':'text-danger'}">\${formatRp(p.budget-keluar)}</td><td class="text-right">\${pct}%</td><td><span class="badge \${status}">\${label}</span></td></tr>\`;
+        return `<tr><td><strong>${p.name}</strong></td><td class="text-right">${formatRp(p.budget)}</td><td class="text-right text-danger">${formatRp(keluar)}</td><td class="text-right ${p.budget-keluar>=0?'text-success':'text-danger'}">${formatRp(p.budget-keluar)}</td><td class="text-right">${pct}%</td><td><span class="badge ${status}">${label}</span></td></tr>`;
       }).join('')
     : '<tr><td colspan="6" class="td-muted" style="text-align:center;padding:20px;">Belum ada proyek</td></tr>';
 }
