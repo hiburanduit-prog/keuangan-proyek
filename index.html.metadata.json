@@ -1,0 +1,5 @@
+{
+  "summary": "Complete single-file web application for multi-project financial tracking. Features: 4-tab navigation (Dashboard, Input Transaksi, Laporan, Pengaturan), localStorage data persistence with seed data, Chart.js charts (donut + bar trend), jsPDF export, SheetJS Excel export, full CRUD for projects/transactions/categories, audit log, backup/restore, Rupiah currency auto-formatting, dark mode glassmorphism premium design, mobile responsive.",
+  "updatedAt": "2026-08-08T05:27:33.883639100Z",
+  "userFacing": true
+}
