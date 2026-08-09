@@ -305,34 +305,103 @@
     .text-muted { color: var(--text-muted); }
     .text-sm { font-size: 12.5px; }
     .hidden { display: none !important; }
-    .receipt-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); }
+    /* LOGIN SCREEN */
+    #login-overlay {
+      position: fixed; inset: 0; background: #0a0d14;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999; padding: 20px; transition: var(--transition);
+      opacity: 1; visibility: visible;
+    }
+    #login-overlay.hidden {
+      opacity: 0; visibility: hidden; pointer-events: none;
+    }
+    .login-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px 24px;
+      width: 100%; max-width: 400px;
+      box-shadow: var(--shadow-lg);
+      display: flex; flex-direction: column; gap: 20px;
+    }
+    .login-header { text-align: center; }
+    .login-logo {
+      width: 50px; height: 50px;
+      background: linear-gradient(135deg, var(--accent), #a855f7);
+      color: white; border-radius: var(--radius);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; margin: 0 auto 12px;
+    }
+    .login-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+    .login-subtitle { font-size: 12px; color: var(--text-muted); }
+    .login-info {
+      padding: 12px; background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      font-size: 11px; color: var(--text-secondary);
+    }
   </style>
 </head>
 <body>
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="login-logo">💰</div>
+      <div class="login-title">KeuanganProyek</div>
+      <div class="login-subtitle">Silakan login untuk mengelola kas proyek</div>
+    </div>
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label">Username</label>
+        <input type="text" id="login-username" class="form-input" placeholder="Masukkan username" required />
+      </div>
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label class="form-label">Password</label>
+        <input type="password" id="login-password" class="form-input" placeholder="Masukkan password" required />
+      </div>
+      <p id="login-error" class="text-danger text-sm hidden" style="margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">⚠️ Username atau password salah.</p>
+      <button type="submit" class="btn btn-primary w-full" style="padding: 11px;">Masuk</button>
+    </form>
+    <div class="login-info">
+      <p style="font-weight:600; margin-bottom:4px;">Info Akun Default:</p>
+      <p>• Admin: <strong>admin</strong> / <strong>admin123</strong></p>
+      <p>• Staff: <strong>staff</strong> / <strong>staff123</strong></p>
+    </div>
+  </div>
+</div>
+
 <div id="app">
   <header id="topbar">
     <div class="topbar-logo">
       <div class="topbar-logo-icon">💰</div>
       <span>KeuanganProyek</span>
     </div>
-    <nav class="topbar-nav">
-      <button class="nav-btn active" onclick="switchTab('dashboard')" id="nav-dashboard">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        <span class="nav-label">Dashboard</span>
-      </button>
-      <button class="nav-btn" onclick="switchTab('input')" id="nav-input">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-        <span class="nav-label">Input Transaksi</span>
-      </button>
-      <button class="nav-btn" onclick="switchTab('laporan')" id="nav-laporan">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-        <span class="nav-label">Laporan</span>
-      </button>
-      <button class="nav-btn" onclick="switchTab('pengaturan')" id="nav-pengaturan">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span class="nav-label">Pengaturan</span>
-      </button>
-    </nav>
+    <div class="flex items-center gap-10">
+      <nav class="topbar-nav">
+        <button class="nav-btn active" onclick="switchTab('dashboard')" id="nav-dashboard">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span class="nav-label">Dashboard</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('input')" id="nav-input">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          <span class="nav-label">Input Transaksi</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('laporan')" id="nav-laporan">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span class="nav-label">Laporan</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('pengaturan')" id="nav-pengaturan">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span class="nav-label">Pengaturan</span>
+        </button>
+      </nav>
+      <div id="user-profile" class="flex items-center gap-10" style="border-left: 1px solid var(--border); padding-left: 14px; margin-left: 6px;">
+        <div style="text-align: right; line-height: 1.2;">
+          <div id="user-name" style="font-size: 13px; font-weight: 600; color: var(--text-primary);">—</div>
+          <div id="user-role" style="font-size: 10px; color: var(--text-muted); text-transform: capitalize;">—</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="handleLogout()" style="padding: 5px 10px; font-size: 11px;">Logout</button>
+      </div>
+    </div>
   </header>
 
   <!-- DASHBOARD TAB -->
@@ -1223,7 +1292,8 @@ function renderProjectTable() {
   const db = getDB(), tbody = document.getElementById('project-tbody'), empty = document.getElementById('project-empty');
   if (!db.projects.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
-  tbody.innerHTML = db.projects.map(p => `<tr><td><strong>${p.name}</strong></td><td class="text-right">${formatRp(p.budget)}</td><td>${formatDate(p.startDate)}</td><td>${formatDate(p.endDate)}</td><td><span class="badge ${p.status.toLowerCase()}">${p.status}</span></td><td><div class="flex gap-8"><button class="btn btn-ghost btn-sm btn-icon" onclick="openProjectModal('${p.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteProject('${p.id}')">🗑️</button></div></td></tr>`).join('');
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  tbody.innerHTML = db.projects.map(p => `<tr><td><strong>${p.name}</strong></td><td class="text-right">${formatRp(p.budget)}</td><td>${formatDate(p.startDate)}</td><td>${formatDate(p.endDate)}</td><td><span class="badge ${p.status.toLowerCase()}">${p.status}</span></td><td><div class="flex gap-8">${isAdmin ? `<button class="btn btn-ghost btn-sm btn-icon" onclick="openProjectModal('${p.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteProject('${p.id}')">🗑️</button>` : `<span class="text-muted" style="font-size:12px;">No Akses</span>`}</div></td></tr>`).join('');
 }
 
 // ===== CATEGORIES =====
@@ -1255,9 +1325,10 @@ function renderCategoryTable() {
   const db = getDB(), tbody = document.getElementById('cat-tbody'), empty = document.getElementById('cat-empty');
   if (!db.categories.length) { tbody.innerHTML = ''; empty.classList.remove('hidden'); return; }
   empty.classList.add('hidden');
+  const isAdmin = currentUser && currentUser.role === 'admin';
   tbody.innerHTML = db.categories.map(c => {
     const badgeClass = c.type === 'Masuk' ? 'masuk' : c.type === 'Keluar' ? 'keluar' : 'keduanya';
-    return `<tr><td><strong>${c.name}</strong></td><td><span class="badge ${badgeClass}">${c.type}</span></td><td><div class="flex gap-8"><button class="btn btn-ghost btn-sm btn-icon" onclick="openCategoryModal('${c.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteCategory('${c.id}')">🗑️</button></div></td></tr>`;
+    return `<tr><td><strong>${c.name}</strong></td><td><span class="badge ${badgeClass}">${c.type}</span></td><td><div class="flex gap-8">${isAdmin ? `<button class="btn btn-ghost btn-sm btn-icon" onclick="openCategoryModal('${c.id}')">✏️</button><button class="btn btn-danger btn-sm btn-icon" onclick="deleteCategory('${c.id}')">🗑️</button>` : `<span class="text-muted" style="font-size:12px;">No Akses</span>`}</div></td></tr>`;
   }).join('');
 }
 
@@ -1420,9 +1491,84 @@ document.querySelectorAll('.modal-overlay').forEach(ov => {
   ov.addEventListener('click', e => { if (e.target === ov) closeModal(ov.id); });
 });
 
+// ===== AUTHENTICATION =====
+const SESSION_KEY = 'keuangan_proyek_session';
+const USERS = [
+  { username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' },
+  { username: 'staff', password: 'staff123', role: 'staff', name: 'Staff Lapangan' }
+];
+let currentUser = null;
+
+function checkAuth() {
+  try {
+    const session = localStorage.getItem(SESSION_KEY);
+    if (session) {
+      currentUser = JSON.parse(session);
+      applyRBAC();
+      document.getElementById('login-overlay').classList.add('hidden');
+      return true;
+    }
+  } catch (e) {}
+  document.getElementById('login-overlay').classList.remove('hidden');
+  return false;
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const u = document.getElementById('login-username').value.trim().toLowerCase();
+  const p = document.getElementById('login-password').value;
+  const user = USERS.find(usr => usr.username.toLowerCase() === u && usr.password === p);
+  if (user) {
+    currentUser = user;
+    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    applyRBAC();
+    document.getElementById('login-overlay').classList.add('hidden');
+    document.getElementById('login-error').classList.add('hidden');
+    document.getElementById('login-username').value = '';
+    document.getElementById('login-password').value = '';
+    toast('Selamat datang, ' + user.name);
+    renderDashboard();
+  } else {
+    document.getElementById('login-error').classList.remove('hidden');
+  }
+}
+
+function handleLogout() {
+  currentUser = null;
+  localStorage.removeItem(SESSION_KEY);
+  document.getElementById('login-overlay').classList.remove('hidden');
+  toast('Anda telah logout', 'info');
+}
+
+function applyRBAC() {
+  if (!currentUser) return;
+  document.getElementById('user-name').textContent = currentUser.name;
+  document.getElementById('user-role').textContent = currentUser.role;
+
+  const isAdmin = currentUser.role === 'admin';
+  
+  // Reset all data button:
+  const resetCard = document.querySelector('button[onclick="confirmReset()"]')?.closest('.card');
+  if (resetCard) {
+    resetCard.style.opacity = isAdmin ? '1' : '0.5';
+    resetCard.style.pointerEvents = isAdmin ? 'all' : 'none';
+  }
+  
+  // Buttons to add project or category
+  const addProjBtn = document.querySelector('button[onclick="openProjectModal()"]');
+  if (addProjBtn) {
+    addProjBtn.style.display = isAdmin ? '' : 'none';
+  }
+  const addCatBtn = document.querySelector('button[onclick="openCategoryModal()"]');
+  if (addCatBtn) {
+    addCatBtn.style.display = isAdmin ? '' : 'none';
+  }
+}
+
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
   seedIfEmpty();
+  checkAuth();
   activeProjectId = getDB().projects[0]?.id || null;
   renderDashboard();
 });
