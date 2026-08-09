@@ -971,7 +971,7 @@ function getDB() { return loadDB(); }
 // ===== SEED DATA =====
 function seedIfEmpty() {
   const db = loadDB();
-  if (db.projects.length > 0) return;
+  if (db.initialized) return;
   const pA = uid(), pB = uid();
   const cMat = uid(), cTK = uid(), cSewa = uid(), cTrans = uid(), cAdm = uid(), cPay = uid(), cLain = uid();
   db.categories = [
@@ -1004,6 +1004,7 @@ function seedIfEmpty() {
     { id: uid(), projectId: pB, date: '2024-04-15', type: 'Keluar', categoryId: cTrans, amount: 4200000,   description: 'Angkutan material berat',   receipt: '' },
   ];
   db.auditLog = [{ id: uid(), action: 'INIT', desc: 'Data contoh berhasil dimuat.', timestamp: new Date().toISOString() }];
+  db.initialized = true;
   saveDB(db);
 }
 
