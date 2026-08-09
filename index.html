@@ -724,6 +724,62 @@
         </div>
       </div>
     </div>
+    <div class="settings-section" id="settings-users-section">
+      <div class="settings-section-title">👥 Manajemen Pengguna (User)</div>
+      <div class="flex gap-8 mb-16">
+        <button class="btn btn-primary" onclick="openUserModal()">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+          Tambah User
+        </button>
+      </div>
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead><tr><th>Nama Lengkap</th><th>Username</th><th>Peran (Role)</th><th>Aksi</th></tr></thead>
+            <tbody id="user-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="modal-overlay" id="modal-user">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="usr-modal-title">Tambah User</div>
+      <button class="modal-close" onclick="closeModal('modal-user')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="usr-edit-id" />
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Nama Lengkap <span class="required">*</span></label>
+        <input type="text" class="form-input" id="usr-fullname" placeholder="Contoh: Budi Hartono" />
+        <span class="form-error" id="err-usr-fullname">Nama lengkap wajib diisi</span>
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Username <span class="required">*</span></label>
+        <input type="text" class="form-input" id="usr-username" placeholder="Contoh: budih" />
+        <span class="form-error" id="err-usr-username">Username wajib diisi</span>
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Password <span class="required">*</span></label>
+        <input type="password" class="form-input" id="usr-password" placeholder="Masukkan password" />
+        <span class="form-error" id="err-usr-password">Password wajib diisi</span>
+      </div>
+      <div class="form-group" style="margin-bottom: 12px;">
+        <label class="form-label">Peran (Role) <span class="required">*</span></label>
+        <select class="form-select" id="usr-role">
+          <option value="admin">Admin (Akses Penuh)</option>
+          <option value="staff">Staff (Akses Terbatas)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-user')">Batal</button>
+      <button class="btn btn-primary" onclick="saveUser()">Simpan User</button>
+    </div>
   </div>
 </div>
 
@@ -962,7 +1018,7 @@ function switchTab(tab) {
   if (tab === 'dashboard') renderDashboard();
   if (tab === 'input') { renderTransactionTable(); renderAuditLog(); populateTxFilterDropdowns(); }
   if (tab === 'laporan') { populateRptDropdowns(); renderReport(); }
-  if (tab === 'pengaturan') { renderProjectTable(); renderCategoryTable(); }
+  if (tab === 'pengaturan') { renderProjectTable(); renderCategoryTable(); renderUserTable(); }
 }
 
 // ===== DASHBOARD =====
@@ -1493,11 +1549,19 @@ document.querySelectorAll('.modal-overlay').forEach(ov => {
 
 // ===== AUTHENTICATION =====
 const SESSION_KEY = 'keuangan_proyek_session';
-const USERS = [
-  { username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' },
-  { username: 'staff', password: 'staff123', role: 'staff', name: 'Staff Lapangan' }
-];
 let currentUser = null;
+
+function getUsers() {
+  const db = getDB();
+  if (!db.users || db.users.length === 0) {
+    db.users = [
+      { id: 'usr-admin', username: 'admin', password: 'admin123', role: 'admin', name: 'Administrator' },
+      { id: 'usr-staff', username: 'staff', password: 'staff123', role: 'staff', name: 'Staff Lapangan' }
+    ];
+    saveDB(db);
+  }
+  return db.users;
+}
 
 function checkAuth() {
   try {
@@ -1517,7 +1581,8 @@ function handleLogin(e) {
   e.preventDefault();
   const u = document.getElementById('login-username').value.trim().toLowerCase();
   const p = document.getElementById('login-password').value;
-  const user = USERS.find(usr => usr.username.toLowerCase() === u && usr.password === p);
+  const usersList = getUsers();
+  const user = usersList.find(usr => usr.username.toLowerCase() === u && usr.password === p);
   if (user) {
     currentUser = user;
     localStorage.setItem(SESSION_KEY, JSON.stringify(user));
@@ -1554,6 +1619,12 @@ function applyRBAC() {
     resetCard.style.pointerEvents = isAdmin ? 'all' : 'none';
   }
   
+  // User settings section
+  const userSection = document.getElementById('settings-users-section');
+  if (userSection) {
+    userSection.style.display = isAdmin ? '' : 'none';
+  }
+  
   // Buttons to add project or category
   const addProjBtn = document.querySelector('button[onclick="openProjectModal()"]');
   if (addProjBtn) {
@@ -1563,6 +1634,96 @@ function applyRBAC() {
   if (addCatBtn) {
     addCatBtn.style.display = isAdmin ? '' : 'none';
   }
+}
+
+// ===== USER MANAGEMENT =====
+function openUserModal(editId) {
+  const usersList = getUsers(), isEdit = !!editId;
+  document.getElementById('usr-modal-title').textContent = isEdit ? 'Edit User' : 'Tambah User';
+  document.getElementById('usr-edit-id').value = editId || '';
+  if (isEdit) {
+    const u = usersList.find(usr => usr.id === editId);
+    if (u) {
+      document.getElementById('usr-fullname').value = u.name;
+      document.getElementById('usr-username').value = u.username;
+      document.getElementById('usr-password').value = u.password;
+      document.getElementById('usr-role').value = u.role;
+    }
+  } else {
+    document.getElementById('usr-fullname').value = '';
+    document.getElementById('usr-username').value = '';
+    document.getElementById('usr-password').value = '';
+    document.getElementById('usr-role').value = 'staff';
+    clearErrors(['usr-fullname', 'usr-username', 'usr-password']);
+  }
+  document.getElementById('modal-user').classList.add('open');
+}
+
+function saveUser() {
+  const db = getDB(), editId = document.getElementById('usr-edit-id').value;
+  if (!db.users) db.users = [];
+  const name = document.getElementById('usr-fullname').value.trim();
+  const username = document.getElementById('usr-username').value.trim().toLowerCase();
+  const password = document.getElementById('usr-password').value;
+  const role = document.getElementById('usr-role').value;
+  
+  clearErrors(['usr-fullname', 'usr-username', 'usr-password']);
+  let valid = true;
+  if (!name) { showError('usr-fullname', 'err-usr-fullname'); valid = false; }
+  if (!username) { showError('usr-username', 'err-usr-username'); valid = false; }
+  if (!password) { showError('usr-password', 'err-usr-password'); valid = false; }
+  if (!valid) return;
+  
+  if (editId) {
+    const idx = db.users.findIndex(u => u.id === editId);
+    if (idx !== -1) {
+      db.users[idx] = { ...db.users[idx], name, username, password, role };
+      toast('User diperbarui');
+    }
+  } else {
+    if (db.users.some(u => u.username === username)) {
+      toast('Username sudah digunakan!', 'error');
+      return;
+    }
+    db.users.push({ id: uid(), name, username, password, role });
+    toast('User ditambahkan');
+  }
+  saveDB(db);
+  closeModal('modal-user');
+  renderUserTable();
+}
+
+function deleteUser(id) {
+  if (id === 'usr-admin' || currentUser.id === id) {
+    toast('Tidak dapat menghapus diri sendiri atau default admin!', 'error');
+    return;
+  }
+  showConfirm('👥', 'Hapus User', 'Akun pengguna ini akan dihapus permanen. Lanjutkan?', () => {
+    const db = getDB();
+    db.users = (db.users || []).filter(u => u.id !== id);
+    saveDB(db);
+    renderUserTable();
+    toast('User berhasil dihapus', 'info');
+  });
+}
+
+function renderUserTable() {
+  const usersList = getUsers();
+  const tbody = document.getElementById('user-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = usersList.map(u => `
+    <tr>
+      <td><strong>${u.name}</strong></td>
+      <td><code>${u.username}</code></td>
+      <td><span class="badge ${u.role === 'admin' ? 'masuk' : 'keduanya'}">${u.role.toUpperCase()}</span></td>
+      <td>
+        <div class="flex gap-8">
+          <button class="btn btn-ghost btn-sm btn-icon" onclick="openUserModal('${u.id}')">✏️</button>
+          <button class="btn btn-danger btn-sm btn-icon" onclick="deleteUser('${u.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
 }
 
 // ===== INIT =====
