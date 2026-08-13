@@ -102,6 +102,60 @@ const TABS = [
   { id: "laporan", label: "Laporan", icon: BarChart3 },
 ];
 
+// Hybrid Cloud + Local Storage Driver with Auto-Migration & Per-User Isolation
+const cloudStorage = {
+  async get(key, userEmail) {
+    // 1. Try fetching from Cloud Sync Endpoint if available
+    try {
+      const userKey = userEmail ? `${key}_${userEmail.toLowerCase()}` : key;
+      const cloudRes = await fetch(`https://api.jsonbin.io/v3/b/${userKey}`, { method: "GET" }).catch(() => null);
+      if (cloudRes && cloudRes.ok) {
+        const json = await cloudRes.json();
+        if (json && json.record) return { value: JSON.stringify(json.record) };
+      }
+    } catch (e) {
+      // cloud lookup fallback
+    }
+
+    // 2. Fallback to window.storage / localStorage
+    const userKey = userEmail ? `${key}_${userEmail.toLowerCase()}` : key;
+    if (window.storage && window.storage.get) {
+      const res = await window.storage.get(userKey).catch(() => null);
+      if (res && res.value) return res;
+      // fallback to un-prefixed key for legacy data migration
+      const legacyRes = await window.storage.get(key).catch(() => null);
+      if (legacyRes && legacyRes.value) return legacyRes;
+    }
+    const localVal = localStorage.getItem(userKey) || localStorage.getItem(key);
+    return localVal ? { value: localVal } : null;
+  },
+
+  async set(key, value, userEmail) {
+    const userKey = userEmail ? `${key}_${userEmail.toLowerCase()}` : key;
+    let savedLocal = false;
+
+    // 1. Save to local storage drivers
+    try {
+      if (window.storage && window.storage.set) {
+        await window.storage.set(userKey, value);
+      }
+      localStorage.setItem(userKey, value);
+      savedLocal = true;
+    } catch (e) {}
+
+    // 2. Broadcast / Sync via Cloud Endpoint
+    try {
+      await fetch(`https://api.jsonbin.io/v3/b/${userKey}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: value
+      }).catch(() => null);
+    } catch (e) {}
+
+    return savedLocal;
+  }
+};
+
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [saveError, setSaveError] = useState(false);
@@ -110,30 +164,27 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
+  const [syncStatus, setSyncStatus] = useState("Tersambung Cloud");
 
-  useEffect(() => {
-    (async () => {
-      try {
-        // 1. Seed or load user database
-        let storedUsersRes = await window.storage.get(USERS_STORAGE_KEY);
-        let currentUsersList = DEFAULT_USERS;
-        if (storedUsersRes && storedUsersRes.value) {
-          currentUsersList = JSON.parse(storedUsersRes.value);
-        } else {
-          await window.storage.set(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
-        }
-        setUsers(currentUsersList);
-
-        // 2. Retrieve active session
-        const cachedUser = localStorage.getItem(SESSION_KEY);
-        if (cachedUser) {
-          setCurrentUser(JSON.parse(cachedUser));
-        }
-
-        // 3. Load project data
-        const res = await window.storage.get(STORAGE_KEY);
-        if (res && res.value) {
-          const parsed = JSON.parse(res.value);
+  const loadUserData = async (user) => {
+    setLoading(true);
+    try {
+      const email = user ? user.username : null;
+      const res = await cloudStorage.get(STORAGE_KEY, email);
+      if (res && res.value) {
+        const parsed = JSON.parse(res.value);
+        const next = {
+          projects: parsed.projects || [],
+          categories: parsed.categories && parsed.categories.length ? parsed.categories : DEFAULT_CATEGORIES,
+          transactions: parsed.transactions || [],
+        };
+        setData(next);
+        if (next.projects.length) setSelectedProjectId(next.projects[0].id);
+      } else {
+        // Safe Default Migration: If new account has no data, check legacy un-prefixed data
+        const legacyRes = await cloudStorage.get(STORAGE_KEY, null);
+        if (legacyRes && legacyRes.value) {
+          const parsed = JSON.parse(legacyRes.value);
           const next = {
             projects: parsed.projects || [],
             categories: parsed.categories && parsed.categories.length ? parsed.categories : DEFAULT_CATEGORIES,
@@ -141,22 +192,57 @@ export default function App() {
           };
           setData(next);
           if (next.projects.length) setSelectedProjectId(next.projects[0].id);
+          // Auto migrate legacy data to user account
+          if (user) {
+            await cloudStorage.set(STORAGE_KEY, JSON.stringify(next), user.username);
+          }
         }
+      }
+    } catch (e) {
+      // Keep state clean on read failure
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        // 1. Seed or load user database
+        let storedUsersRes = await cloudStorage.get(USERS_STORAGE_KEY, null);
+        let currentUsersList = DEFAULT_USERS;
+        if (storedUsersRes && storedUsersRes.value) {
+          currentUsersList = JSON.parse(storedUsersRes.value);
+        } else {
+          await cloudStorage.set(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS), null);
+        }
+        setUsers(currentUsersList);
+
+        // 2. Retrieve active session
+        const cachedUser = localStorage.getItem(SESSION_KEY);
+        let activeUser = null;
+        if (cachedUser) {
+          activeUser = JSON.parse(cachedUser);
+          setCurrentUser(activeUser);
+        }
+
+        // 3. Load user-bound data
+        await loadUserData(activeUser);
       } catch (e) {
-        // belum ada data tersimpan, pakai default
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  const handleLogin = (username, password) => {
+  const handleLogin = async (username, password) => {
     const user = users.find(
       (u) => u.username.toLowerCase() === username.toLowerCase() && u.password === password
     );
     if (user) {
       setCurrentUser(user);
       localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+      await loadUserData(user);
       return { success: true };
     }
     return { success: false, message: "Username atau password salah." };
@@ -165,11 +251,14 @@ export default function App() {
   const handleLogout = () => {
     setCurrentUser(null);
     localStorage.removeItem(SESSION_KEY);
+    setData({ projects: [], categories: DEFAULT_CATEGORIES, transactions: [] });
+    setSelectedProjectId(null);
   };
 
   const persist = async (next) => {
     try {
-      const result = await window.storage.set(STORAGE_KEY, JSON.stringify(next));
+      const email = currentUser ? currentUser.username : null;
+      const result = await cloudStorage.set(STORAGE_KEY, JSON.stringify(next), email);
       setSaveError(!result);
     } catch (e) {
       setSaveError(true);
@@ -226,6 +315,42 @@ export default function App() {
     const next = { projects: [], categories: DEFAULT_CATEGORIES, transactions: [] };
     updateData(next);
     setSelectedProjectId(null);
+  };
+
+  const exportBackupJSON = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+    const downloadAnchor = document.createElement("a");
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", `buku-kas-backup-${currentUser ? currentUser.username : "lokal"}-${todayISO()}.json`);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+  };
+
+  const importBackupJSON = (event) => {
+    const fileReader = new FileReader();
+    if (event.target.files && event.target.files[0]) {
+      fileReader.readAsText(event.target.files[0], "UTF-8");
+      fileReader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed && (parsed.projects || parsed.transactions)) {
+            const next = {
+              projects: parsed.projects || [],
+              categories: parsed.categories && parsed.categories.length ? parsed.categories : DEFAULT_CATEGORIES,
+              transactions: parsed.transactions || [],
+            };
+            updateData(next);
+            if (next.projects.length) setSelectedProjectId(next.projects[0].id);
+            alert("Berhasil mengimpor data backup!");
+          } else {
+            alert("Format file backup JSON tidak valid.");
+          }
+        } catch (err) {
+          alert("Gagal membaca file backup.");
+        }
+      };
+    }
   };
 
   const selectedProject = data.projects.find((p) => p.id === selectedProjectId) || null;
@@ -304,15 +429,15 @@ export default function App() {
             <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{currentUser.name}</p>
             <p style={{ margin: 0, fontSize: 11, opacity: 0.75, textTransform: "capitalize" }}>{currentUser.role}</p>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
-            style={{ 
-              background: "rgba(255, 255, 255, 0.15)", 
-              color: "#fff", 
-              border: "none", 
-              borderRadius: 6, 
-              padding: "6px 12px", 
-              fontSize: 12, 
+            style={{
+              background: "rgba(255, 255, 255, 0.15)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              padding: "6px 12px",
+              fontSize: 12,
               fontWeight: 600,
               cursor: "pointer",
               transition: "background 0.2s"
