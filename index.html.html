@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Buku Kas Proyek — Online Multi-Device</title>
+  <!-- CDN React, Babel & Tailwind -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #0a0d14; color: #f1f5f9; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    const LOCAL_KEY = "buku-kas-data";
+    const CLOUD_URL = "https://kvdb.io/8D4f491d9M8357J111/keuangan_proyek_master_sync";
+
+    const DEFAULT_DATA = {
+      projects: [
+        { id: "proj-1", name: "Pokmas Gg IX", budget: 100000000 }
+      ],
+      categories: [
+        { id: "cat-1", name: "Material", type: "keluar" },
+        { id: "cat-2", name: "Tenaga Kerja", type: "keluar" },
+        { id: "cat-3", name: "Termin Proyek", type: "masuk" }
+      ],
+      transactions: []
+    };
+
+    const uid = () => Math.random().toString(36).slice(2, 10);
+    const todayISO = () => new Date().toISOString().slice(0, 10);
+    const formatRupiah = (n) => new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Math.round(n || 0));
+
+    function App() {
+      const [data, setData] = useState(DEFAULT_DATA);
+      const [selectedProjectId, setSelectedProjectId] = useState("proj-1");
+      const [syncing, setSyncing] = useState(false);
+      const [activeTab, setActiveTab] = useState("dashboard");
+
+      // Form State Modal
+      const [showModal, setShowModal] = useState(false);
+      const [txType, setTxType] = useState("keluar");
+      const [txAmount, setTxAmount] = useState("");
+      const [txNote, setTxNote] = useState("");
+      const [txCategory, setTxCategory] = useState("cat-1");
+
+      // 1. Sync & Load Engine
+      const loadSyncData = async () => {
+        setSyncing(true);
+        let cloudData = null;
+        try {
+          const res = await fetch(CLOUD_URL);
+          if (res.ok) {
+            const txt = await res.text();
+            if (txt && txt.length > 10) cloudData = JSON.parse(txt);
+          }
+        } catch(e) {}
+
+        const localTxt = localStorage.getItem(LOCAL_KEY) || localStorage.getItem("keuangan_proyek_data");
+        let localData = null;
+        if (localTxt) {
+          try { localData = JSON.parse(localTxt); } catch(e) {}
+        }
+
+        let merged = DEFAULT_DATA;
+        if (cloudData && cloudData.projects && cloudData.projects.length > 0) {
+          merged = cloudData;
+        } else if (localData && localData.projects && localData.projects.length > 0) {
+          merged = localData;
+          try { await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify(merged) }); } catch(e) {}
+        }
+
+        setData(merged);
+        if (merged.projects.length) setSelectedProjectId(merged.projects[0].id);
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(merged));
+        setSyncing(false);
+      };
+
+      useEffect(() => {
+        loadSyncData();
+      }, []);
+
+      const saveAndSync = async (nextData) => {
+        setData(nextData);
+        localStorage.setItem(LOCAL_KEY, JSON.stringify(nextData));
+        setSyncing(true);
+        try {
+          await fetch(CLOUD_URL, { method: "POST", body: JSON.stringify(nextData) });
+        } catch(e) {}
+        setSyncing(false);
+      };
+
+      const handleAddProject = () => {
+        const name = prompt("Nama Proyek Baru:");
+        if (!name) return;
+        const budget = parseFloat(prompt("Anggaran Proyek (Rp):", "100000000")) || 0;
+        const newP = { id: uid(), name, budget };
+        const next = { ...data, projects: [...data.projects, newP] };
+        saveAndSync(next);
+        setSelectedProjectId(newP.id);
+      };
+
+      const handleAddTransaction = (e) => {
+        e.preventDefault();
+        const num = parseFloat(txAmount);
+        if (!num || num <= 0) return alert("Masukkan nominal yang valid!");
+        
+        const newTx = {
+          id: uid(),
+          projectId: selectedProjectId,
+          type: txType,
+          amount: num,
+          categoryId: txCategory,
+          note: txNote || "-",
+          date: todayISO()
+        };
+
+        const next = { ...data, transactions: [newTx, ...data.transactions] };
+        saveAndSync(next);
+        setShowModal(false);
+        setTxAmount("");
+        setTxNote("");
+      };
+
+      const handleDeleteTx = (id) => {
+        if (!confirm("Yakin ingin menghapus transaksi ini?")) return;
+        const next = { ...data, transactions: data.transactions.filter(t => t.id !== id) };
+        saveAndSync(next);
+      };
+
+      const selectedProj = data.projects.find(p => p.id === selectedProjectId) || data.projects[0];
+      const filteredTx = data.transactions.filter(t => t.projectId === selectedProjectId);
+
+      const totals = useMemo(() => {
+        let masuk = 0, keluar = 0;
+        filteredTx.forEach(t => {
+          if (t.type === "masuk") masuk += t.amount;
+          else keluar += t.amount;
+        });
+        return { masuk, keluar, saldo: masuk - keluar };
+      }, [filteredTx]);
+
+      return (
+        <div className="min-h-screen pb-12">
+          {/* Topbar Navigation */}
+          <div className="bg-slate-900/90 backdrop-blur sticky top-0 z-50 border-b border-slate-800 px-6 py-3.5 flex justify-between items-center flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-white">📊</div>
+              <div>
+                <h1 className="font-bold text-slate-100 text-lg">KeuanganProyek</h1>
+                <p className="text-xs text-slate-400">Status Sync: {syncing ? <span className="text-amber-400">Menyinkronkan...</span> : <span className="text-emerald-400">🌐 Online Realtime Active</span>}</p>
+              </div>
+            </div>
+
+            <div className="flex bg-slate-800/80 p-1 rounded-xl border border-slate-700">
+              <button onClick={() => setActiveTab("dashboard")} className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${activeTab === 'dashboard' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Dashboard</button>
+              <button onClick={() => setActiveTab("transaksi")} className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${activeTab === 'transaksi' ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Riwayat Transaksi</button>
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={loadSyncData} className="px-3 py-1.5 bg-slate-800 text-xs text-slate-300 rounded-lg border border-slate-700 hover:bg-slate-700">🔄 Refresh</button>
+            </div>
+          </div>
+
+          <div className="max-w-6xl mx-auto p-6 space-y-6">
+            {/* Project Switcher */}
+            <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 flex flex-wrap justify-between items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pilih Proyek:</span>
+                {data.projects.map(p => (
+                  <button key={p.id} onClick={() => setSelectedProjectId(p.id)} className={`px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 ${selectedProjectId === p.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' : 'bg-slate-700/60 text-slate-300 hover:bg-slate-700'}`}>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+              <button onClick={handleAddProject} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-bold rounded-xl border border-slate-600">+ Tambah Proyek</button>
+            </div>
+
+            {selectedProj ? (
+              <>
+                {/* Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/80">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Pemasukan</p>
+                    <p className="text-2xl font-extrabold text-emerald-400 mt-2">{formatRupiah(totals.masuk)}</p>
+                  </div>
+                  <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/80">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Pengeluaran</p>
+                    <p className="text-2xl font-extrabold text-rose-400 mt-2">{formatRupiah(totals.keluar)}</p>
+                  </div>
+                  <div className="bg-slate-800/50 p-5 rounded-2xl border border-slate-700/80">
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sisa Saldo Kas</p>
+                    <p className="text-2xl font-extrabold text-indigo-300 mt-2">{formatRupiah(totals.saldo)}</p>
+                  </div>
+                </div>
+
+                {/* Quick Action Buttons */}
+                <div className="flex gap-3">
+                  <button onClick={() => { setTxType("masuk"); setShowModal(true); }} className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl text-sm transition shadow-lg shadow-emerald-900/20">+ Catat Uang Masuk</button>
+                  <button onClick={() => { setTxType("keluar"); setShowModal(true); }} className="flex-1 py-3.5 bg-rose-600 hover:bg-rose-500 font-bold rounded-xl text-sm transition shadow-lg shadow-rose-900/20">- Catat Pengeluaran</button>
+                </div>
+
+                {/* Table Transactions */}
+                <div className="bg-slate-800/50 rounded-2xl border border-slate-700/80 overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-700/80 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-200">Riwayat Transaksi Realtime</h3>
+                    <span className="text-xs text-slate-400 font-medium">{filteredTx.length} Transaksi</span>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-slate-900/50 text-slate-400 text-xs uppercase font-semibold">
+                        <tr>
+                          <th className="px-6 py-3.5">Tanggal</th>
+                          <th className="px-6 py-3.5">Keterangan</th>
+                          <th className="px-6 py-3.5">Tipe</th>
+                          <th className="px-6 py-3.5 text-right">Nominal</th>
+                          <th className="px-6 py-3.5 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-700/50">
+                        {filteredTx.map(t => (
+                          <tr key={t.id} className="hover:bg-slate-700/20 transition">
+                            <td className="px-6 py-4 text-slate-400 text-xs">{t.date}</td>
+                            <td className="px-6 py-4 font-semibold text-slate-200">{t.note}</td>
+                            <td className="px-6 py-4">
+                              <span className={`px-3 py-1 rounded-full text-xs font-bold ${t.type === 'masuk' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                                {t.type === 'masuk' ? 'Uang Masuk' : 'Pengeluaran'}
+                              </span>
+                            </td>
+                            <td className={`px-6 py-4 text-right font-extrabold ${t.type === 'masuk' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                              {t.type === 'masuk' ? '+' : '-'}{formatRupiah(t.amount)}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <button onClick={() => handleDeleteTx(t.id)} className="text-xs text-rose-400 hover:text-rose-300 hover:underline">Hapus</button>
+                            </td>
+                          </tr>
+                        ))}
+                        {filteredTx.length === 0 && (
+                          <tr><td colSpan="5" className="px-6 py-12 text-center text-slate-500">Belum ada transaksi di proyek ini.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </div>
+
+          {/* Modal Form Transaksi */}
+          {showModal && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-slate-900 border border-slate-700 w-full max-w-md rounded-2xl p-6 space-y-4">
+                <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+                  <h3 className="font-bold text-lg text-slate-100">{txType === 'masuk' ? 'Tambah Uang Masuk' : 'Tambah Pengeluaran'}</h3>
+                  <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-200">✕</button>
+                </div>
+                <form onSubmit={handleAddTransaction} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-400 block mb-1">Nominal (Rp)</label>
+                    <input type="number" required placeholder="Contoh: 500000" value={txAmount} onChange={e => setTxAmount(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-indigo-500" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-400 block mb-1">Keterangan Transaksi</label>
+                    <input type="text" required placeholder="Contoh: Pembelian Semen" value={txNote} onChange={e => setTxNote(e.target.value)} className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 outline-none focus:border-indigo-500" />
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 bg-slate-800 text-slate-300 font-semibold rounded-xl text-sm border border-slate-700">Batal</button>
+                    <button type="submit" className={`flex-1 py-2.5 font-bold rounded-xl text-sm text-white ${txType === 'masuk' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-rose-600 hover:bg-rose-500'}`}>Simpan Transaksi</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
