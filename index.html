@@ -24,7 +24,6 @@
 
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
-    const { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } = window.Recharts || {};
 
     const DEFAULT_CATEGORIES = [
       { id: "cat-material", name: "Material", type: "keluar" },
@@ -46,27 +45,41 @@
     const formatRupiah = (n) =>
       new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(Math.round(n || 0));
 
-    // Cloud Driver - Isolated Per Email User Account
+    // Hybrid Cloud Storage Driver
     const cloudStorage = {
       async get(key, userEmail) {
         const userKey = userEmail ? `${key}_${userEmail.toLowerCase().replace(/[^a-z0-9]/g, '')}` : key;
+        
+        // 1. First Priority: Local Storage Migration check
+        const localUserVal = localStorage.getItem(userKey);
+        const localLegacyVal = localStorage.getItem(key);
+
+        // 2. Fetch from Cloud
         try {
           const res = await fetch(`https://kvdb.io/8D4f491d9M8357J111/${userKey}`);
           if (res.ok) {
             const val = await res.text();
-            if (val) return { value: val };
+            if (val && val.trim().length > 10) {
+              const parsedCloud = JSON.parse(val);
+              // Merge if local has items and cloud is empty
+              if (parsedCloud && parsedCloud.transactions && parsedCloud.transactions.length > 0) {
+                return { value: val };
+              }
+            }
           }
         } catch (e) {}
 
-        // Local Storage Fallback
-        const localVal = localStorage.getItem(userKey) || localStorage.getItem(key);
-        return localVal ? { value: localVal } : null;
+        // Fallback to local
+        if (localUserVal) return { value: localUserVal };
+        if (localLegacyVal) return { value: localLegacyVal };
+        return null;
       },
 
       async set(key, value, userEmail) {
         const userKey = userEmail ? `${key}_${userEmail.toLowerCase().replace(/[^a-z0-9]/g, '')}` : key;
         try {
           localStorage.setItem(userKey, value);
+          localStorage.setItem(key, value); // preserve legacy copy
         } catch (e) {}
 
         try {
@@ -102,22 +115,11 @@
             };
             setData(next);
             if (next.projects.length) setSelectedProjectId(next.projects[0].id);
+
+            // Ensure uploaded to cloud
+            await cloudStorage.set(STORAGE_KEY, JSON.stringify(next), email);
           } else {
-            // Auto Migrate un-bound local data if this is the first login
-            const legacyRes = await cloudStorage.get(STORAGE_KEY, null);
-            if (legacyRes && legacyRes.value) {
-              const parsed = JSON.parse(legacyRes.value);
-              const next = {
-                projects: parsed.projects || [],
-                categories: parsed.categories && parsed.categories.length ? parsed.categories : DEFAULT_CATEGORIES,
-                transactions: parsed.transactions || [],
-              };
-              setData(next);
-              if (next.projects.length) setSelectedProjectId(next.projects[0].id);
-              await cloudStorage.set(STORAGE_KEY, JSON.stringify(next), email);
-            } else {
-              setData({ projects: [], categories: DEFAULT_CATEGORIES, transactions: [] });
-            }
+            setData({ projects: [], categories: DEFAULT_CATEGORIES, transactions: [] });
           }
         } catch (e) {
         } finally {
@@ -167,7 +169,8 @@
 
       const addTransaction = (type) => {
         if (!selectedProjectId) return alert("Pilih proyek terlebih dahulu!");
-        const amount = parseFloat(prompt("Jumlah Nominal (Rp):"));
+        const amountStr = prompt("Jumlah Nominal (Rp):");
+        const amount = parseFloat(amountStr);
         if (!amount || amount <= 0) return;
         const note = prompt("Keterangan Transaksi:");
         const newTx = {
@@ -179,6 +182,12 @@
           date: todayISO()
         };
         updateData({ ...data, transactions: [...data.transactions, newTx] });
+      };
+
+      const deleteTransaction = (txId) => {
+        if (!window.confirm("Hapus transaksi ini?")) return;
+        const nextTx = data.transactions.filter(t => t.id !== txId);
+        updateData({ ...data, transactions: nextTx });
       };
 
       const exportBackup = () => {
@@ -297,6 +306,7 @@
                         <th className="px-6 py-3">Keterangan</th>
                         <th className="px-6 py-3">Tipe</th>
                         <th className="px-6 py-3 text-right">Nominal</th>
+                        <th className="px-6 py-3 text-center">Aksi</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -312,11 +322,14 @@
                           <td className={`px-6 py-3.5 text-right font-semibold ${t.type === 'masuk' ? 'text-emerald-600' : 'text-rose-600'}`}>
                             {t.type === 'masuk' ? '+' : '-'}{formatRupiah(t.amount)}
                           </td>
+                          <td className="px-6 py-3.5 text-center">
+                            <button onClick={() => deleteTransaction(t.id)} className="text-xs text-red-500 hover:text-red-700">Hapus</button>
+                          </td>
                         </tr>
                       ))}
                       {filteredTransactions.length === 0 && (
                         <tr>
-                          <td colSpan="4" className="px-6 py-8 text-center text-slate-400">Belum ada transaksi di proyek ini.</td>
+                          <td colSpan="5" className="px-6 py-8 text-center text-slate-400">Belum ada transaksi di proyek ini.</td>
                         </tr>
                       )}
                     </tbody>
